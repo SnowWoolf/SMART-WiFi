@@ -1,9 +1,9 @@
 # SMART-WiFi
 
-Поддерживаемые чипсеты:
+## Поддерживаемые чипсеты:
 
-RTL8811CU
+RTL8811CU (Gembird WNP-UA-008)
 
-RTL8192EU
+RTL8192EU (Mercusys MW300UH)
 
-MT7601
+MT7601 (Gembird WNP-UA-011)
