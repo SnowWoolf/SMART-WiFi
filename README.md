@@ -25,10 +25,12 @@ curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install.s
 
 ## Настройка
 
-Основной конфиг лежит тут:
-`/etc/smart-wifi/wifi.conf`
+Все настройки в одном конфиг-файле:
+
+`nano /etc/smart-wifi/wifi.conf`
 
 Перезапуск сервиса:
+
 `systemctl restart smart-wifi.service`
 
 ---
@@ -47,7 +49,7 @@ curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install-d
 curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/setup-wifi.sh | bash
 ```
 
-#### После установки
+#### 3. После установки
 Проверка:
 
 ```
