@@ -128,6 +128,9 @@ setup_ap_runtime() {
     systemctl restart hostapd
 
     iptables -t nat -C PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports "$WEB_PORT" 2>/dev/null || \
+        while iptables -t nat -C PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports 5555 2>/dev/null; do
+            iptables -t nat -D PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports 5555
+        done
         iptables -t nat -A PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports "$WEB_PORT"
 
     iptables -C INPUT -i "$AP_REAL_IFACE" -p tcp --dport "$WEB_PORT" -j ACCEPT 2>/dev/null || \
