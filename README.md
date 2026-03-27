@@ -23,20 +23,6 @@ curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install.s
 - попытается загрузить драйверы
 - создаст и включит сервис smart-wifi.service
 
-### После установки
-Проверка:
-
-```
-systemctl status smart-wifi.service --no-pager
-ip a
-iw dev
-```
-
-Логи:
-```
-journalctl -u smart-wifi.service -n 100 --no-pager
-```
-
 # Настройка
 
 Основной конфиг лежит тут:
@@ -61,4 +47,16 @@ curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install-d
 curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/setup-wifi.sh | bash
 ```
 
----
+#### После установки
+Проверка:
+
+```
+systemctl status smart-wifi.service --no-pager
+ip a
+iw dev
+```
+
+Логи:
+```
+journalctl -u smart-wifi.service -n 100 --no-pager
+```
