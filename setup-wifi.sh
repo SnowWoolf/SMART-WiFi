@@ -95,10 +95,9 @@ country_code=$AP_COUNTRY
 ieee80211n=1
 wmm_enabled=1
 auth_algs=1
-ignore_broadcast_ssid=0
-wpa=2
-wpa_key_mgmt=WPA-PSK
-rsn_pairwise=CCMP
+wpa=$AP_WPA_MODE
+wpa_key_mgmt=$AP_WPA_KEY_MGMT
+rsn_pairwise=$AP_RSN_PAIRWISE
 wpa_passphrase=$AP_PASSPHRASE
 EOF
 
