@@ -10,7 +10,7 @@
 
 После настройки возможна замена адаптера (на совместимый), требуется только перезапуск УМ или сервиса.
 
-### Установка
+## Установка
 ```
 curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install.sh | bash
 ```
@@ -23,7 +23,7 @@ curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install.s
 - попытается загрузить драйверы
 - создаст и включит сервис smart-wifi.service
 
-# Настройка
+## Настройка
 
 Основной конфиг лежит тут:
 `/etc/smart-wifi/wifi.conf`
