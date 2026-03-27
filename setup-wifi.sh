@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_RAW="${REPO_RAW:-https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main}"
 CONF_PATH="/etc/smart-wifi/wifi.conf"
 HOSTAPD_CONF="/etc/hostapd/hostapd-smartwifi.conf"
 DNSMASQ_CONF="/etc/dnsmasq.d/smartwifi-ap.conf"
@@ -12,12 +11,23 @@ need_cmd() {
     command -v "$1" >/dev/null 2>&1
 }
 
-fetch_default_config() {
-    mkdir -p /etc/smart-wifi
-    if [[ ! -f "$CONF_PATH" ]]; then
-        log "Downloading default wifi.conf"
-        curl -fsSL "$REPO_RAW/wifi.conf" -o "$CONF_PATH"
+power_usb_wifi() {
+    if command -v powerlines >/dev/null 2>&1; then
+        log "Using powerlines to enable USB Wi-Fi power"
+        powerlines '{"iface":"/dev/uspd_usb_device", "state":"on"}' || true
+        sleep 2
+        return 0
     fi
+
+    if [[ -w /sys/class/leds/USB_PW_ON/brightness ]]; then
+        log "Using /sys/class/leds/USB_PW_ON/brightness to enable USB Wi-Fi power"
+        echo 1 > /sys/class/leds/USB_PW_ON/brightness
+        sleep 2
+        return 0
+    fi
+
+    log "USB Wi-Fi power control not found, continuing without explicit power-on"
+    return 0
 }
 
 load_config() {
@@ -31,11 +41,6 @@ install_pkgs() {
         apt-get update
         apt-get install -y hostapd dnsmasq
     fi
-}
-
-power_usb() {
-    powerlines '{"iface":"/dev/uspd_usb_device", "state":"on"}' || true
-    sleep 3
 }
 
 load_modules() {
@@ -117,14 +122,12 @@ setup_ap_runtime() {
 
     iw reg set "$AP_COUNTRY" || true
 
-    mkdir -p /run/hostapd
     sed -i 's|^#\?DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd-smartwifi.conf"|' /etc/default/hostapd || true
 
     systemctl unmask hostapd || true
     systemctl restart dnsmasq
     systemctl restart hostapd
 
-    # Разрешаем только HTTP на WEB_PORT и DNS/DHCP для клиентов AP
     iptables -t nat -C PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports "$WEB_PORT" 2>/dev/null || \
         iptables -t nat -A PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports "$WEB_PORT"
 
@@ -179,10 +182,9 @@ EOF
 }
 
 main() {
-    fetch_default_config
     load_config
     install_pkgs
-    power_usb
+    power_usb_wifi
     load_modules
     pick_ifaces
     stop_existing_wifi

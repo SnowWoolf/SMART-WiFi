@@ -31,6 +31,25 @@ install_module_if_exists() {
     fi
 }
 
+power_usb_wifi() {
+    if command -v powerlines >/dev/null 2>&1; then
+        log "Using powerlines to enable USB Wi-Fi power"
+        powerlines '{"iface":"/dev/uspd_usb_device", "state":"on"}' || true
+        sleep 2
+        return 0
+    fi
+
+    if [[ -w /sys/class/leds/USB_PW_ON/brightness ]]; then
+        log "Using /sys/class/leds/USB_PW_ON/brightness to enable USB Wi-Fi power"
+        echo 1 > /sys/class/leds/USB_PW_ON/brightness
+        sleep 2
+        return 0
+    fi
+
+    log "USB Wi-Fi power control not found, continuing without explicit power-on"
+    return 0
+}
+
 log "Kernel: $KVER"
 log "Arch:   $(uname -m)"
 
@@ -39,11 +58,9 @@ mkdir -p "$TMPDIR"
 log "Fetching repository files"
 fetch_file "wifi.conf" "$TMPDIR/wifi.conf"
 fetch_file "setup-wifi.sh" "$TMPDIR/setup-wifi.sh"
-
-fetch_file "wifi-modules/8192eu.ko" "$TMPDIR/8192eu.ko" || true
-fetch_file "wifi-modules/8821cu.ko" "$TMPDIR/8821cu.ko" || true
-fetch_file "wifi-modules/8811cu.ko" "$TMPDIR/8811cu.ko" || true
-fetch_file "wifi-modules/mt7601u.ko" "$TMPDIR/mt7601u.ko" || true
+fetch_file "wifi-modules/8192eu.ko" "$TMPDIR/8192eu.ko"
+fetch_file "wifi-modules/8821cu.ko" "$TMPDIR/8821cu.ko"
+fetch_file "wifi-modules/mt7601u.ko" "$TMPDIR/mt7601u.ko"
 
 log "Installing config and runtime script"
 mkdir -p /etc/smart-wifi
@@ -58,10 +75,6 @@ install_module_if_exists "$TMPDIR/8192eu.ko" \
 install_module_if_exists "$TMPDIR/8821cu.ko" \
     "/lib/modules/$KVER/kernel/drivers/net/wireless/realtek/rtl8821cu" \
     "8821cu.ko"
-
-install_module_if_exists "$TMPDIR/8811cu.ko" \
-    "/lib/modules/$KVER/kernel/drivers/net/wireless/realtek/rtl8811cu" \
-    "8811cu.ko"
 
 install_module_if_exists "$TMPDIR/mt7601u.ko" \
     "/lib/modules/$KVER/kernel/drivers/net/wireless/mediatek/mt7601u" \
@@ -79,21 +92,17 @@ mkdir -p /etc/modules-load.d
 cat > /etc/modules-load.d/smart-wifi.conf <<'EOF'
 8192eu
 8821cu
-8811cu
 mt7601u
 EOF
 
 log "Running depmod"
 depmod -a
 
-log "Powering USB Wi-Fi"
-powerlines '{"iface":"/dev/uspd_usb_device", "state":"on"}' || true
-sleep 3
+power_usb_wifi
 
 log "Trying to load available drivers"
 modprobe 8192eu 2>/dev/null || true
 modprobe 8821cu 2>/dev/null || true
-modprobe 8811cu 2>/dev/null || true
 modprobe mt7601u 2>/dev/null || true
 
 log "Creating systemd service"
@@ -126,17 +135,6 @@ systemctl restart smart-wifi.service || true
 
 echo
 echo "Done."
-echo
-echo "Installed files:"
-echo "  /etc/smart-wifi/wifi.conf"
-echo "  /usr/local/bin/setup-wifi.sh"
-echo "  /etc/systemd/system/smart-wifi.service"
-echo
-echo "Useful commands:"
-echo "  systemctl status smart-wifi.service --no-pager"
-echo "  journalctl -u smart-wifi.service -n 100 --no-pager"
-echo "  ip a"
-echo "  iw dev"
 echo
 echo "One-line install:"
 echo "  curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install.sh | bash"
