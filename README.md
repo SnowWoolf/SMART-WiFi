@@ -1,6 +1,6 @@
 # SMART-WiFi
 
-## Поддерживаемые чипсеты:
+### Поддерживаемые чипсеты:
 
 RTL8811CU (Gembird WNP-UA-008)
 
@@ -8,6 +8,7 @@ RTL8192EU (Mercusys MW300UH)
 
 MT7601 (Gembird WNP-UA-011)
 
+### Установка:
 ```
 curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install.sh | bash
 ```
@@ -20,14 +21,13 @@ curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install.s
 - попытается загрузить драйверы
 - создаст и включит сервис smart-wifi.service
 
-После установки
+### После установки
 Проверка:
-curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install.sh | bash
+
 ```
 systemctl status smart-wifi.service --no-pager
 ip a
 iw dev
-curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install.sh | bash
 ```
 
 Логи:
