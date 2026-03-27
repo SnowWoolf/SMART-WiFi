@@ -97,6 +97,7 @@ wmm_enabled=1
 auth_algs=1
 wpa=$AP_WPA_MODE
 wpa_key_mgmt=$AP_WPA_KEY_MGMT
+wpa_pairwise=$AP_WPA_PAIRWISE
 rsn_pairwise=$AP_RSN_PAIRWISE
 wpa_passphrase=$AP_PASSPHRASE
 EOF
@@ -109,6 +110,40 @@ dhcp-option=option:router,$AP_ADDR
 dhcp-option=option:dns-server,$AP_ADDR
 address=/#/$AP_ADDR
 EOF
+}
+
+flush_ap_firewall_rules() {
+    while iptables -t nat -C PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports 5555 2>/dev/null; do
+        iptables -t nat -D PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports 5555
+    done
+
+    while iptables -t nat -C PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports 8080 2>/dev/null; do
+        iptables -t nat -D PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports 8080
+    done
+
+    while iptables -t nat -C PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports "$WEB_PORT" 2>/dev/null; do
+        iptables -t nat -D PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports "$WEB_PORT"
+    done
+
+    while iptables -C INPUT -i "$AP_REAL_IFACE" -p tcp --dport "$WEB_PORT" -j ACCEPT 2>/dev/null; do
+        iptables -D INPUT -i "$AP_REAL_IFACE" -p tcp --dport "$WEB_PORT" -j ACCEPT
+    done
+
+    while iptables -C INPUT -i "$AP_REAL_IFACE" -p udp --dport 67:68 -j ACCEPT 2>/dev/null; do
+        iptables -D INPUT -i "$AP_REAL_IFACE" -p udp --dport 67:68 -j ACCEPT
+    done
+
+    while iptables -C INPUT -i "$AP_REAL_IFACE" -p udp --dport 53 -j ACCEPT 2>/dev/null; do
+        iptables -D INPUT -i "$AP_REAL_IFACE" -p udp --dport 53 -j ACCEPT
+    done
+
+    while iptables -C INPUT -i "$AP_REAL_IFACE" -p tcp --dport 53 -j ACCEPT 2>/dev/null; do
+        iptables -D INPUT -i "$AP_REAL_IFACE" -p tcp --dport 53 -j ACCEPT
+    done
+
+    while iptables -C FORWARD -i "$AP_REAL_IFACE" -j DROP 2>/dev/null; do
+        iptables -D FORWARD -i "$AP_REAL_IFACE" -j DROP
+    done
 }
 
 setup_ap_runtime() {
@@ -127,26 +162,19 @@ setup_ap_runtime() {
     systemctl restart dnsmasq
     systemctl restart hostapd
 
-    iptables -t nat -C PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports "$WEB_PORT" 2>/dev/null || \
-        while iptables -t nat -C PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports 5555 2>/dev/null; do
-            iptables -t nat -D PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports 5555
-        done
-        iptables -t nat -A PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports "$WEB_PORT"
+    flush_ap_firewall_rules
 
-    iptables -C INPUT -i "$AP_REAL_IFACE" -p tcp --dport "$WEB_PORT" -j ACCEPT 2>/dev/null || \
-        iptables -A INPUT -i "$AP_REAL_IFACE" -p tcp --dport "$WEB_PORT" -j ACCEPT
+    # Redirect all client HTTP traffic to the local web UI port
+    iptables -t nat -A PREROUTING -i "$AP_REAL_IFACE" -p tcp --dport 80 -j REDIRECT --to-ports "$WEB_PORT"
 
-    iptables -C INPUT -i "$AP_REAL_IFACE" -p udp --dport 67:68 -j ACCEPT 2>/dev/null || \
-        iptables -A INPUT -i "$AP_REAL_IFACE" -p udp --dport 67:68 -j ACCEPT
+    # Allow only the web port and DNS/DHCP from AP clients
+    iptables -A INPUT -i "$AP_REAL_IFACE" -p tcp --dport "$WEB_PORT" -j ACCEPT
+    iptables -A INPUT -i "$AP_REAL_IFACE" -p udp --dport 67:68 -j ACCEPT
+    iptables -A INPUT -i "$AP_REAL_IFACE" -p udp --dport 53 -j ACCEPT
+    iptables -A INPUT -i "$AP_REAL_IFACE" -p tcp --dport 53 -j ACCEPT
 
-    iptables -C INPUT -i "$AP_REAL_IFACE" -p udp --dport 53 -j ACCEPT 2>/dev/null || \
-        iptables -A INPUT -i "$AP_REAL_IFACE" -p udp --dport 53 -j ACCEPT
-
-    iptables -C INPUT -i "$AP_REAL_IFACE" -p tcp --dport 53 -j ACCEPT 2>/dev/null || \
-        iptables -A INPUT -i "$AP_REAL_IFACE" -p tcp --dport 53 -j ACCEPT
-
-    iptables -C FORWARD -i "$AP_REAL_IFACE" -j DROP 2>/dev/null || \
-        iptables -A FORWARD -i "$AP_REAL_IFACE" -j DROP
+    # No routing from AP clients to other networks
+    iptables -A FORWARD -i "$AP_REAL_IFACE" -j DROP
 }
 
 setup_sta_runtime() {
