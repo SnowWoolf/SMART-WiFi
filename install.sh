@@ -135,6 +135,3 @@ systemctl restart smart-wifi.service || true
 
 echo
 echo "Done."
-echo
-echo "One-line install:"
-echo "  curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install.sh | bash"
