@@ -6,6 +6,8 @@ RTL8811CU (Gembird WNP-UA-008)
 RTL8192EU (Mercusys MW300UH)
 MT7601 (Gembird WNP-UA-011)
 ```
+Замена адаптера (на совместимый) требует только перезапуска УМ или сервиса.
+
 ### Установка
 ```
 curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install.sh | bash
