@@ -46,14 +46,15 @@ journalctl -u smart-wifi.service -n 100 --no-pager
 `systemctl restart smart-wifi.service`
 
 ---
+### Для тестирования
 
-### 1. Только установка драйверов
+#### 1. Только установка драйверов
 
 ```
 curl -fsSL https://raw.githubusercontent.com/SnowWoolf/SMART-WiFi/main/install-drivers.sh | bash
 ```
 
-### 2. Только настройка адаптера
+#### 2. Только настройка адаптера
 
 Подключить адаптер к USB и выполнить:
 ```
